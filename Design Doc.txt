@@ -1,0 +1,44 @@
+Spacero Design Doc
+
+Description
+- 2d mobile local multiplayer game
+- 3 modes: tutorial, single player, local multiplayer-> same phone and/or bluetooth
+
+
+Basic Gameplay
+- planets orbit in space
+	bigger planets rotate baster, slower ones rotate slower
+	TODO: orbiting moons
+- press space to blow up a planet and jump away
+	bigger planet = more jump power
+	blowing up planets rewards points to the player
+	if another player is on the planet you blow up, they lose a life and you get extra points
+		dead characters respawn after X seconds
+	when a player dies 3 times, game is over, player with more points win
+- character based powers
+	every characters gets 1 special power 
+	jetpack: dash forward 
+	lockdown: place a planet on lockdown and blast off. next person on the planet gets stuck for X seconds
+- power ups
+	double points for planets
+	extra life
+	extra speed
+	
+	
+Competitive play
+- free play mode->pick any character and any map
+- tournament-> random maps and modes
+	
+
+To do
+- move the game to mobile, change aspect ratio and input method
+- redo planets
+- implement power ups
+- redo maps
+- make a proper menu
+- implement different characters
+- character selection
+
+
+
+
