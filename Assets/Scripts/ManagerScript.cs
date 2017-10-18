@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine.UI;
 
 public class ManagerScript : MonoBehaviour {
-	public Vector2 Boundaries = new Vector2(40, 30);
+	private Vector2 Boundaries = new Vector2(40, 30);
 
 	public GameObject[] planetPrefabList;
 	public GameObject[] coinsPrefabList;
@@ -16,7 +16,7 @@ public class ManagerScript : MonoBehaviour {
 	public float planetRespawnTime = 3f;
 	
 	//UI stuff
-	public Text p1score, p2score, winText, restartText;
+	public Text p1score, p2score, p1Power, p2Power, winText, restartText;
 	public GameObject player1, player2;
 
 	// game states
@@ -26,7 +26,8 @@ public class ManagerScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		this.GetComponent<BoxCollider2D> ().size = Boundaries * 2;
+		Boundaries.x = this.GetComponent<BoxCollider2D> ().size.x / 2;
+		Boundaries.y = this.GetComponent<BoxCollider2D> ().size.y / 2;
 	}
 	
 	// Update is called once per frame
@@ -44,14 +45,8 @@ public class ManagerScript : MonoBehaviour {
 				playerWin(player2);
 		}
 
-		// updates the score
-		if (player1)
-			p1score.text = "P1 score: " + player1.GetComponent<PlayerScript> ().score;
-		if (player2)
-			p2score.text = "P2 score: " + player2.GetComponent<PlayerScript> ().score;
-
 		// handles reset button
-		if (gameOver && Input.GetKeyDown (KeyCode.R)) {
+		if (gameOver && (Input.GetKeyDown (KeyCode.R) || (Input.touchCount > 0 && Input.GetTouch (0).phase == TouchPhase.Began))) {
 			Application.LoadLevel(Application.loadedLevel);
 		}
 		else if(gameOver && Input.GetKeyDown(KeyCode.N)){

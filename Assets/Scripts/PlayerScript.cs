@@ -14,7 +14,10 @@ public class PlayerScript : MonoBehaviour {
 	public PlanetScript currentPlanet;
 	public bool landed = false;
 	public Vector2 speed = new Vector2(0f, 0f);
+
 	public int score = 0;
+	public float powerLevel = 0f;
+	public float powerLevelDecayPerSecond = 20f;
 	public ManagerScript mscript;
 
 	public float boostDuration = 20f;
@@ -42,61 +45,44 @@ public class PlayerScript : MonoBehaviour {
 	void Update () {
 		if (!landed){
 			// calculate planet's affect on this player
-
 			GetComponent<Rigidbody2D>().velocity += calculateGravityPull();
-
-			if (canBoost && button == actionButton.space && Input.GetKeyDown (KeyCode.LeftAlt)) {
-				boosting = true;
-
-				GetComponent<AudioSource>().PlayOneShot (boostSound);
-				canBoost = false;
-			}
-			//print (GetComponent<Rigidbody2D>().velocity);
-
-			if (boosting){
-				//GetComponent<Rigidbody2D>().velocity *= boostStrength;
-				GetComponent<Rigidbody2D>().velocity += new Vector2(transform.position.normalized.x * boostStrength,
-				                                                    transform.position.normalized.y * boostStrength);
-				print ("boosted " + currentBoostDuration);
-				currentBoostDuration -= 1;
-				if (currentBoostDuration < 0){
-					print ("finished");
-					boosting = false;
-					currentBoostDuration = boostDuration;
+			// decrease power level
+			if (powerLevel > 0f){
+				powerLevel -= Time.deltaTime * powerLevelDecayPerSecond;
+				if (powerLevel < 0f){
+					powerLevel = 0f;
+				}
+				else if (powerLevel > 100){
+					powerLevel = 100f;
 				}
 			}
 		}
 		else{
 			GetComponent<Rigidbody2D>().velocity = Vector2.zero;
 
-
 			if (button == actionButton.backspace && Input.GetKeyDown (KeyCode.Return)) {
 				currentPlanet.rotationSpeed *= -1;
 				GetComponent<AudioSource>().PlayOneShot (flipSound);
 			}
 		}
-
-		if (Input.GetKeyDown (actionKey) && landed) {
-			leavePlanet();
-		}
 	}
 
-
-	// if a player enters the range, set it to land on the planet
+	// if collide with another player, compares scores and destroy the player with less points
 	void OnCollisionEnter2D(Collision2D other) {
 		if (other.gameObject.tag == "Player") {
 			GetComponent<AudioSource>().PlayOneShot (collisionSound);
-			if (other.gameObject.GetComponent<PlayerScript>().score > this.score){
+			if (other.gameObject.GetComponent<PlayerScript>().powerLevel > this.powerLevel){
 				mscript.playerWin(other.gameObject);
 				Destroy(this.gameObject);
 			}
-			else if (other.gameObject.GetComponent<PlayerScript>().score < this.score){
+			else if (other.gameObject.GetComponent<PlayerScript>().powerLevel < this.powerLevel){
 				mscript.playerWin(this.gameObject);
 				Destroy(other.gameObject);
 			}
 		}
 	}
-
+	
+	// helper function that lands the player onto a planet given the planet's script
 	public void landOnPlanet(PlanetScript pscript){
 		if (landed == false){
 			currentPlanet = pscript;
@@ -110,35 +96,69 @@ public class PlayerScript : MonoBehaviour {
 		}
 	}
 
+	// sends player off a planet and blows it up
 	public void leavePlanet(){
-		landed = false;
-		canBoost = true;
-		transform.parent = null;
-		GetComponent<AudioSource>().PlayOneShot (leavingSound);
+		if (landed){
+			landed = false;
+			canBoost = true;
+			transform.parent = null;
+			GetComponent<AudioSource>().PlayOneShot (leavingSound);
 
-		Vector2 temp = new Vector2 (transform.position.x - currentPlanet.transform.position.x,
-		                            transform.position.y - currentPlanet.transform.position.y).normalized;
-		GetComponent<Rigidbody2D>().velocity = temp * currentPlanet.explosionSpeed;
-		//print (rigidbody2D.velocity.x + ", " + rigidbody2D.velocity.y);
-		if (ID == 1) {
-			if (mscript.player2 &&
-			    mscript.player2.GetComponent<PlayerScript>().currentPlanet &&
-			    mscript.player2.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
-				mscript.playerWin(this.gameObject);
-			}
-		}
-		else{
-			if (mscript.player1 &&
-			    mscript.player1.GetComponent<PlayerScript>().currentPlanet &&
-			    mscript.player1.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
-				mscript.playerWin(this.gameObject);
-			}
-		}
+			Vector2 temp = new Vector2 (transform.position.x - currentPlanet.transform.position.x,
+			                            transform.position.y - currentPlanet.transform.position.y).normalized;
+			GetComponent<Rigidbody2D>().velocity = temp * currentPlanet.explosionSpeed;
 
-		nearbyPlanets.Remove (currentPlanet.gameObject);
-		//Destroy (currentPlanet.gameObject);
-		mscript.deactivate (currentPlanet.gameObject);
-		currentPlanet = null;		
+			// give player power
+			powerLevel += currentPlanet.size * 10;
+			print(powerLevel);
+
+			//print (rigidbody2D.velocity.x + ", " + rigidbody2D.velocity.y);
+			if (ID == 1) {
+				if (mscript.player2 &&
+				    mscript.player2.GetComponent<PlayerScript>().currentPlanet &&
+				    mscript.player2.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
+					mscript.playerWin(this.gameObject);
+				}
+			}
+			else{
+				if (mscript.player1 &&
+				    mscript.player1.GetComponent<PlayerScript>().currentPlanet &&
+				    mscript.player1.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
+					mscript.playerWin(this.gameObject);
+				}
+			}
+
+			nearbyPlanets.Remove (currentPlanet.gameObject);
+			//Destroy (currentPlanet.gameObject);
+			mscript.deactivate (currentPlanet.gameObject);
+			currentPlanet = null;		
+		}
+	}
+
+	// activate the player's action
+	// only boost implemented for now
+	public void activatePlayerAction(){
+		if (canBoost){
+			boosting = true;
+			GetComponent<AudioSource>().PlayOneShot (boostSound);
+			canBoost = false;
+			StartCoroutine(actionBoost());
+		}
+	}
+
+	IEnumerator actionBoost(){
+		while(boosting){
+			GetComponent<Rigidbody2D>().velocity += new Vector2(transform.position.normalized.x * boostStrength,
+			                                                    transform.position.normalized.y * boostStrength);
+			//print ("boosted " + currentBoostDuration);
+			currentBoostDuration -= 1;
+			if (currentBoostDuration < 0){
+				//print ("finished");
+				boosting = false;
+				currentBoostDuration = boostDuration;
+			}
+			yield return 0;
+		}
 	}
 
 	// rotate the player to face the planet

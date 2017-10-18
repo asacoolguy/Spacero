@@ -11,10 +11,21 @@ Basic Gameplay
 	TODO: orbiting moons
 - press space to blow up a planet and jump away
 	bigger planet = more jump power
-	blowing up planets rewards points to the player
 	if another player is on the planet you blow up, they lose a life and you get extra points
 		dead characters respawn after X seconds
 	when a player dies 3 times, game is over, player with more points win
+- power levels (maybe call this gravity power gauge)
+	CURRENT PLAN: blowing up planets rewards power levels to player
+		bigger planet = more power
+		power level decreases while in flight but not while landed
+		power level determines who wins during a collision
+		analaysis: this encourages players to go for big planets for power and use small
+			planets for orientation
+	ALTERNATE plan: power level charges while landed. 
+		bigger planet = charges faster
+		taking off has limited charges that replenish. 
+		power level determines who wins during a collision
+		analysis: this slows the game down and encourages players to carefully aim more. maybe not fun.
 - character based powers
 	every characters gets 1 special power 
 	jetpack: dash forward 
@@ -31,14 +42,16 @@ Competitive play
 	
 
 To do
-- move the game to mobile, change aspect ratio and input method
-- redo planets
+- redo planets and gravitational pull calculation
 - implement power ups
 - redo maps
+- Remake HUD
+	button should react when pressed, shake when can't be pressed
 - make a proper menu
 - implement different characters
 - character selection
 
+- Walls that you bounce off
 
 
 
