@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PlanetScript : MonoBehaviour {
 	public float size;
@@ -7,9 +8,12 @@ public class PlanetScript : MonoBehaviour {
 	public float explosionSpeed = 5f; // speed the planet adds to the players on explosion
 	public Sprite regular, explosion;
 
+	//private List<GameObject> landedPlayers;
+
 	// Use this for initialization
 	void Start () {
 		size = this.GetComponent<CircleCollider2D> ().radius * this.transform.localScale.x;
+		//landedPlayers = new List<GameObject>();
 	}
 	
 	// Update is called once per frame
@@ -20,7 +24,7 @@ public class PlanetScript : MonoBehaviour {
 
 	// if a player enters the range, set it to land on the planet
 	void OnTriggerEnter2D(Collider2D other) {
-		if (other.gameObject.tag == "Player") {
+		if (other.gameObject.tag == "Player" && other.gameObject.GetComponent<PlayerScript>().isDead == false) {
 			other.gameObject.GetComponent<PlayerScript>().landOnPlanet(this);
 		}
 	}
@@ -35,11 +39,13 @@ public class PlanetScript : MonoBehaviour {
 	public bool canSpawn(){
 		GameObject[] players = GameObject.FindGameObjectsWithTag ("Player");
 		foreach (GameObject obj in players) {
-			float xDist = obj.transform.position.x - this.transform.position.x;
-			float yDist = obj.transform.position.y - this.transform.position.y;
-			float safeDistance = this.transform.GetComponent<CircleCollider2D>().radius + obj.GetComponent<BoxCollider2D>().size.y;
-			if (Mathf.Sqrt(xDist * xDist + yDist * yDist) < safeDistance){
-				return false;
+			if (obj.GetComponent<PlayerScript>().isDead == false){
+				float xDist = obj.transform.position.x - this.transform.position.x;
+				float yDist = obj.transform.position.y - this.transform.position.y;
+				float safeDistance = this.transform.GetComponent<CircleCollider2D>().radius + obj.GetComponent<BoxCollider2D>().size.y;
+				if (Mathf.Sqrt(xDist * xDist + yDist * yDist) < safeDistance){
+					return false;
+				}
 			}
 		}
 
@@ -55,4 +61,5 @@ public class PlanetScript : MonoBehaviour {
 			GetComponent<SpriteRenderer>().sprite = regular;
 		}
 	}
+
 }

@@ -46,14 +46,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\MusicManager.cs" />
      <Compile Include="Assets\Scripts\ManagerScript.cs" />
+     <Compile Include="Assets\Scripts\MusicManager.cs" />
      <Compile Include="Assets\Scripts\PlanetGravityScript.cs" />
      <Compile Include="Assets\Scripts\PlanetScript.cs" />
      <Compile Include="Assets\Scripts\PlayerHUDScript.cs" />
      <Compile Include="Assets\Scripts\PlayerScript.cs" />
+     <Compile Include="Assets\Scripts\menuScript.cs" />
      <Compile Include="Assets\Scripts\orbScript.cs" />
-     <Compile Include="Assets\menuScript.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>D:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

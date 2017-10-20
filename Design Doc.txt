@@ -9,6 +9,8 @@ Basic Gameplay
 - planets orbit in space
 	bigger planets rotate baster, slower ones rotate slower
 	TODO: orbiting moons
+- goal is to collect coins. when all coins are gone. person with more coins wins. 
+	when you kill another player, you get some of his coins
 - press space to blow up a planet and jump away
 	bigger planet = more jump power
 	if another player is on the planet you blow up, they lose a life and you get extra points
@@ -20,20 +22,36 @@ Basic Gameplay
 		power level decreases while in flight but not while landed
 		power level determines who wins during a collision
 		analaysis: this encourages players to go for big planets for power and use small
-			planets for orientation
-	ALTERNATE plan: power level charges while landed. 
-		bigger planet = charges faster
-		taking off has limited charges that replenish. 
-		power level determines who wins during a collision
-		analysis: this slows the game down and encourages players to carefully aim more. maybe not fun.
+			planets for orientation. but there is nothing stopping players from button mashing.
+			we need some sort of limit to stop button mashing, but not too much to disturb the fast
+			pace feeling of the game. also we need a better way than the insta death mechanic.
+	ALTERNATE plan: power level charges while landed and depletes when drifting.
+		bigger planet = charges faster. 
+		taking off consumes power (say 25%), no matter planet size. 
+			this incentivizes players to use big planets to charge and small ones to angle themselves
+		replace insta-death on launch mechanic with...
+			plan 1: have a health bar. being blown off decreases health by 1 out of 3. 
+				player collision is still instakill for player with more oxigen
+			plan 2: take the mutual 25% hit to your oxigen/power level. if it reaches 0 you die. 
+				this makes players want to stay on planets to charge
+			plan 3: take the mutual 25% hit to power level. have another attack bar.
+				power level charges on all planets and depletes while drifting or being on red planets. 
+				attack bar charges while drifting and does not deplete. 
+				during collision, player with higher attack bar wins. 
+			plan 4: getting killed just means you lose some of your coins to your attacker.
+				you respawn after X seconds. 
+- if player knocks into other players
+	while on a planet, the player on the planet gets bounced off
+	while drifting, insta death
 - character based powers
 	every characters gets 1 special power 
 	jetpack: dash forward 
 	lockdown: place a planet on lockdown and blast off. next person on the planet gets stuck for X seconds
 - power ups
-	double points for planets
-	extra life
+	double coins
+	full oxigen
 	extra speed
+	coin magnet
 	
 	
 Competitive play
@@ -42,16 +60,53 @@ Competitive play
 	
 
 To do
+- refactor code
+	- rename variables and methods, delete extra code
+	- move things into event system
+		gamestates, hud, player respawn, etc
+	- change planetRespawn so that it is based on size
+
 - redo planets and gravitational pull calculation
 - implement power ups
+- implement planet cracking
 - redo maps
 - Remake HUD
 	button should react when pressed, shake when can't be pressed
+- better death animation when players wins through collision
 - make a proper menu
 - implement different characters
 - character selection
-
 - Walls that you bounce off
 
+
+Phases
+- phase 1: basic game for alpha testing -- 1 week, by 10/27
+	- code refactored
+	- gravity function re-implemented
+	- power ups and planet cracking implemented
+	- redesign basic map
+	- better HUD
+- phase 2: prettify the game -- 2 weeks, by 11/10
+	- investigate 3d vs 2d
+		that martian game with tiny astronauts seem cool
+	- think of art style that makes the game seem unique and cool looking
+	- make assets
+		power ups
+		coins
+		space background
+		planets
+		astronauts
+		HUD
+		sound effects & animaions
+	- make a few more maps
+- phase 3: menu -- 1 week, by 11/17
+	- make a proper menu 
+		tutorial, local versus, settings, credits 
+	- pause menu during the game
+	- map selection, character selection
+- phase 4: expansion
+	- more characters, more maps
+	- simple progression system
+	- local practice mode with AI?
 
 

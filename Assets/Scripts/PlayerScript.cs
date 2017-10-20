@@ -10,25 +10,35 @@ public class PlayerScript : MonoBehaviour {
 	public actionButton button;
 	KeyCode actionKey;
 
+	// basic info
 	public int ID;
 	public PlanetScript currentPlanet;
-	public bool landed = false;
 	public Vector2 speed = new Vector2(0f, 0f);
-
+	// basic states
+	public bool landed = false;
+	public bool canJump = false;
+	// respawn variables
+	public GameObject respawnMarker;
+	public bool isDead = false;
+	public float respawnTime = 4f;
+	public float respawnTimeCount = 0;
+	public int coinsLostOnDeath = 3;
+	// scores and bars
 	public int score = 0;
-	public float powerLevel = 0f;
-	public float powerLevelDecayPerSecond = 20f;
+	public float powerLevel = 25f;
+	public float powerLevelDecayPerSecond = 10f;
+	public float powerLevelUsedOnJump = 20f;
 	public ManagerScript mscript;
-
+	// bossting stuff
 	public float boostDuration = 20f;
-	public float currentBoostDuration;
+	private float currentBoostDuration;
 	public bool canBoost = true;
 	public bool boosting = false;
 	public float boostStrength = 1f;
 
 	public ArrayList nearbyPlanets = new ArrayList();
 
-	public AudioClip coinSound, landingSound, leavingSound, collisionSound, flipSound, boostSound;
+	public AudioClip coinSound, landingSound, leavingSound, deathSound, flipSound, boostSound, chargedSound, respawnSound, explosionSound;
 
 	// Use this for initialization
 	void Start () {
@@ -43,26 +53,51 @@ public class PlayerScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (!landed){
-			// calculate planet's affect on this player
-			GetComponent<Rigidbody2D>().velocity += calculateGravityPull();
-			// decrease power level
-			if (powerLevel > 0f){
-				powerLevel -= Time.deltaTime * powerLevelDecayPerSecond;
-				if (powerLevel < 0f){
-					powerLevel = 0f;
+		if (!isDead){ 
+			if (!landed){ // if player is drifting, it moves based on planets' gravities
+				GetComponent<Rigidbody2D>().velocity += calculateGravityPull();
+				// decrease power level when drifting
+				if (powerLevel > 0f){
+					powerLevel -= Time.deltaTime * powerLevelDecayPerSecond;
+					if (powerLevel < 0f){
+						powerLevel = 0f;
+					}
+					else if (powerLevel > 100){
+						powerLevel = 100f;
+					}
 				}
-				else if (powerLevel > 100){
-					powerLevel = 100f;
+			}
+			else{ // if player has landed, then it has no velocity and its rotation is that of the planet
+				GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+				landingRotate();
+
+				if (button == actionButton.backspace && Input.GetKeyDown (KeyCode.Return)) {
+					currentPlanet.rotationSpeed *= -1;
+					GetComponent<AudioSource>().PlayOneShot (flipSound);
+				}
+
+				// increase power level when landed
+				powerLevel += currentPlanet.size * 8 * Time.deltaTime;
+				// enable jumping when powerlevel reaches a certain point
+				if (powerLevel < powerLevelUsedOnJump){
+					canJump = false;
+				}
+				else{
+					if (canJump == false){
+						canJump = true;
+						GetComponent<AudioSource>().PlayOneShot(chargedSound);
+					}
 				}
 			}
 		}
-		else{
-			GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+		else{ // if player is dead, decrease the countdown timer, lock its location
+			respawnTimeCount -= Time.deltaTime;
+			this.gameObject.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
+			transform.position = respawnMarker.transform.position;
+			transform.rotation = respawnMarker.transform.rotation;
 
-			if (button == actionButton.backspace && Input.GetKeyDown (KeyCode.Return)) {
-				currentPlanet.rotationSpeed *= -1;
-				GetComponent<AudioSource>().PlayOneShot (flipSound);
+			if (respawnTimeCount < 0){
+				respawn();
 			}
 		}
 	}
@@ -70,14 +105,13 @@ public class PlayerScript : MonoBehaviour {
 	// if collide with another player, compares scores and destroy the player with less points
 	void OnCollisionEnter2D(Collision2D other) {
 		if (other.gameObject.tag == "Player") {
-			GetComponent<AudioSource>().PlayOneShot (collisionSound);
-			if (other.gameObject.GetComponent<PlayerScript>().powerLevel > this.powerLevel){
-				mscript.playerWin(other.gameObject);
-				Destroy(this.gameObject);
+			PlayerScript otherPlayer = other.gameObject.GetComponent<PlayerScript>();
+			if (other.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude >
+				this.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude){
+				suicide();
 			}
-			else if (other.gameObject.GetComponent<PlayerScript>().powerLevel < this.powerLevel){
-				mscript.playerWin(this.gameObject);
-				Destroy(other.gameObject);
+			else{
+				otherPlayer.suicide();
 			}
 		}
 	}
@@ -86,6 +120,7 @@ public class PlayerScript : MonoBehaviour {
 	public void landOnPlanet(PlanetScript pscript){
 		if (landed == false){
 			currentPlanet = pscript;
+			//pscript.addLandedPlayer(this.gameObject);
 			landed = true;
 			canBoost = false;
 			GetComponent<AudioSource>().PlayOneShot (landingSound);
@@ -98,38 +133,36 @@ public class PlayerScript : MonoBehaviour {
 
 	// sends player off a planet and blows it up
 	public void leavePlanet(){
-		if (landed){
+		if (landed && canJump){
 			landed = false;
 			canBoost = true;
 			transform.parent = null;
 			GetComponent<AudioSource>().PlayOneShot (leavingSound);
+			GetComponent<AudioSource>().PlayOneShot (explosionSound);
 
 			Vector2 temp = new Vector2 (transform.position.x - currentPlanet.transform.position.x,
 			                            transform.position.y - currentPlanet.transform.position.y).normalized;
 			GetComponent<Rigidbody2D>().velocity = temp * currentPlanet.explosionSpeed;
 
-			// give player power
-			powerLevel += currentPlanet.size * 10;
-			print(powerLevel);
+			// take away player power
+			powerLevel -= powerLevelUsedOnJump;
 
 			//print (rigidbody2D.velocity.x + ", " + rigidbody2D.velocity.y);
+			PlayerScript otherPlayer;
 			if (ID == 1) {
-				if (mscript.player2 &&
-				    mscript.player2.GetComponent<PlayerScript>().currentPlanet &&
-				    mscript.player2.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
-					mscript.playerWin(this.gameObject);
-				}
+				otherPlayer = mscript.player2.GetComponent<PlayerScript>();
 			}
 			else{
-				if (mscript.player1 &&
-				    mscript.player1.GetComponent<PlayerScript>().currentPlanet &&
-				    mscript.player1.GetComponent<PlayerScript>().currentPlanet.gameObject == this.currentPlanet.gameObject){
-					mscript.playerWin(this.gameObject);
-				}
+				otherPlayer = mscript.player1.GetComponent<PlayerScript>();
+			}
+
+			// kills the other player if they're on this planet too
+			if (otherPlayer.isDead == false && otherPlayer.currentPlanet &&
+			    otherPlayer.currentPlanet.gameObject == this.currentPlanet.gameObject){
+				otherPlayer.suicide();
 			}
 
 			nearbyPlanets.Remove (currentPlanet.gameObject);
-			//Destroy (currentPlanet.gameObject);
 			mscript.deactivate (currentPlanet.gameObject);
 			currentPlanet = null;		
 		}
@@ -184,6 +217,42 @@ public class PlayerScript : MonoBehaviour {
 
 	public bool isLanded(){
 		return landed;
+	}
+
+	// disable the player's components and starts the respawn timer
+	public void suicide(){
+		isDead = true;
+		currentPlanet = null;
+		powerLevel = 0f;
+		nearbyPlanets.Clear();
+		respawnTimeCount = respawnTime;
+		GetComponent<SpriteRenderer>().enabled = false;
+		GetComponent<BoxCollider2D>().enabled = false;
+		GetComponent<AudioSource>().PlayOneShot(deathSound);
+		// give other player coins
+		int coinsTaken = coinsLostOnDeath;
+		if (score < coinsLostOnDeath){
+			coinsTaken = score;
+		}
+		score -= coinsTaken;
+		if (ID == 1){
+			mscript.player2.GetComponent<PlayerScript>().score += coinsTaken;
+		}
+		else{
+			mscript.player1.GetComponent<PlayerScript>().score += coinsTaken;
+		}
+
+	}
+
+	// respawn the player by reactivating its components
+	public void respawn(){
+		isDead = false;
+		landed = false;
+		canJump = false;
+		powerLevel = 25f;
+		GetComponent<SpriteRenderer>().enabled = true;
+		GetComponent<BoxCollider2D>().enabled = true;
+		GetComponent<AudioSource>().PlayOneShot(respawnSound);
 	}
 
 	private Vector2 calculateGravityPull(){
