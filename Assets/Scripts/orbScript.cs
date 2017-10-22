@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class orbScript : MonoBehaviour {
+public class OrbScript : MonoBehaviour {
 	public int pointValue = 10;
 
 	// Use this for initialization
@@ -17,8 +17,7 @@ public class orbScript : MonoBehaviour {
 	// if a player enters the range, set it to land on the planet
 	void OnTriggerEnter2D(Collider2D other) {
 		if (other.gameObject.tag == "Player") {
-			other.gameObject.GetComponent<PlayerScript>().score += pointValue;
-			other.gameObject.GetComponent<PlayerScript>().playCoinSound();
+			other.gameObject.GetComponent<PlayerScript>().AcquiredOrb(pointValue);
 			Destroy(this.gameObject);
 		}
 	}

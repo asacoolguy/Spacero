@@ -6,48 +6,49 @@ using UnityEngine.UI;
 public class PlayerHUDScript : MonoBehaviour {
 	public GameObject playerObj;
 	private PlayerScript player;
+
 	private Slider slider;
 	private Text text;
 	private Button jumpButton, actionButton;
 
-	// Use this for initialization
 	void Start () {
+		// sets up all the GUI elements
 		text = transform.Find("score").gameObject.GetComponent<Text>();
 		slider = transform.Find("powerSliders").gameObject.GetComponent<Slider>();
 		player = playerObj.GetComponent<PlayerScript>();
 		jumpButton = transform.Find("Jump Button").gameObject.GetComponent<Button>();
 		actionButton = transform.Find("Action Button").gameObject.GetComponent<Button>();
 
-		jumpButton.onClick.AddListener(() => player.leavePlanet());
-		actionButton.onClick.AddListener(() => player.activatePlayerAction());
+		jumpButton.onClick.AddListener(() => player.LeavePlanet());
+		actionButton.onClick.AddListener(() => player.ActivatePlayerAction());
 
-		disableHUDInteraction();
+		DisableHUDInteraction();
 	}
 
 	// Update is called once per frame
 	void Update () {
-		text.text = "P" + player.ID + " score: " + player.score;
-		slider.value = Mathf.MoveTowards(slider.value, player.powerLevel, 5f);
+		text.text = "P" + (player.GetPlayerID() + 1) + " score: " + player.GetScore();
+		slider.value = Mathf.MoveTowards(slider.value, player.GetPowerLevel(), 5f);
 
-		if (player.isDead == false && player.landed && player.canJump){
-			enableHUDInteraction();
+		if (player.GetIsDead() == false && player.GetIsLanded() && player.GetCanJump()){
+			EnableHUDInteraction();
 		}
 		else{
-			disableHUDInteraction();
+			DisableHUDInteraction();
 		}
 	}
 
-	public void disableHUDInteraction(){
+	public void DisableHUDInteraction(){
 		jumpButton.interactable = false;
 		actionButton.interactable = false;
 	}
 
-		public void enableHUDInteraction(){
+	public void EnableHUDInteraction(){
 		jumpButton.interactable = true;
 		actionButton.interactable = true;
 	}
 
-	public void disableHUDOnGameOver(){
+	public void DisableHUDOnGameOver(){
 		jumpButton.enabled = false;
 		actionButton.enabled = false;
 	}

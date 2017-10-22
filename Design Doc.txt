@@ -13,66 +13,50 @@ Basic Gameplay
 	when you kill another player, you get some of his coins
 - press space to blow up a planet and jump away
 	bigger planet = more jump power
-	if another player is on the planet you blow up, they lose a life and you get extra points
-		dead characters respawn after X seconds
-	when a player dies 3 times, game is over, player with more points win
+	if another player is on the planet you blow up, they die. you get some of their coins. 
+		dead players respawn after X seconds.
 - power levels (maybe call this gravity power gauge)
-	CURRENT PLAN: blowing up planets rewards power levels to player
-		bigger planet = more power
-		power level decreases while in flight but not while landed
-		power level determines who wins during a collision
-		analaysis: this encourages players to go for big planets for power and use small
-			planets for orientation. but there is nothing stopping players from button mashing.
-			we need some sort of limit to stop button mashing, but not too much to disturb the fast
-			pace feeling of the game. also we need a better way than the insta death mechanic.
-	ALTERNATE plan: power level charges while landed and depletes when drifting.
+	power level charges while landed and depletes when drifting.
 		bigger planet = charges faster. 
-		taking off consumes power (say 25%), no matter planet size. 
-			this incentivizes players to use big planets to charge and small ones to angle themselves
-		replace insta-death on launch mechanic with...
-			plan 1: have a health bar. being blown off decreases health by 1 out of 3. 
-				player collision is still instakill for player with more oxigen
-			plan 2: take the mutual 25% hit to your oxigen/power level. if it reaches 0 you die. 
-				this makes players want to stay on planets to charge
-			plan 3: take the mutual 25% hit to power level. have another attack bar.
-				power level charges on all planets and depletes while drifting or being on red planets. 
-				attack bar charges while drifting and does not deplete. 
-				during collision, player with higher attack bar wins. 
-			plan 4: getting killed just means you lose some of your coins to your attacker.
-				you respawn after X seconds. 
+	taking off consumes power (say 25%), no matter planet size. 
+		this incentivizes players to use big planets to charge and small ones to angle themselves
+	ALTERNATIVELY: no powerlevel, tap to jump a little, hold and release to charge and jump a lot
+		this incentivizes the player to not jump spam, because the small jump can only get you so far
+			note: captain space's jetpack would make the jump distance limit obsolete
 - if player knocks into other players
-	while on a planet, the player on the planet gets bounced off
-	while drifting, insta death
+	player with more speed wins
 - character based powers
 	every characters gets 1 special power 
 	jetpack: dash forward 
-	lockdown: place a planet on lockdown and blast off. next person on the planet gets stuck for X seconds
+	hook: shoot a hook on the left side, if grab something then go there
+	puff: increase in size briefly
+	teleport: drop a marker while drifting, instantly return there 
 - power ups
-	double coins
-	full oxigen
+	barrier
+	fast jump charge
 	extra speed
 	coin magnet
+- new ideas
+	set a time limit per game, say 1 min. planets/powerups/coins continue to respawn.
+		after time is up, player with most points win. 
+	blackholes that lead to perma death
+	barriers that you bounce off
 	
 	
-Competitive play
+	
+Game modes
 - free play mode->pick any character and any map
-- tournament-> random maps and modes
+- tournament mode-> random maps and modes
 	
 
 To do
-- refactor code
-	- rename variables and methods, delete extra code
-	- move things into event system
-		gamestates, hud, player respawn, etc
-	- change planetRespawn so that it is based on size
-
-- redo planets and gravitational pull calculation
 - implement power ups
 - implement planet cracking
-- redo maps
 - Remake HUD
 	button should react when pressed, shake when can't be pressed
+- rethink about the powerlevel thing
 - better death animation when players wins through collision
+- move game states into event system
 - make a proper menu
 - implement different characters
 - character selection
@@ -84,6 +68,7 @@ Phases
 	- code refactored
 	- gravity function re-implemented
 	- power ups and planet cracking implemented
+	- moons that rotate around things
 	- redesign basic map
 	- better HUD
 - phase 2: prettify the game -- 2 weeks, by 11/10
