@@ -33,14 +33,30 @@ public abstract class PlayerScript : MonoBehaviour {
 	private bool canDash = true;
 	private bool isDashing = false;
 	public float dashStrength = 1f;*/
+	// power up variables
+	private float powerupCountdown;
+	public PowerupScript.PowerupType activatedPowerup; // TODO:make this private later
+	public int powerupChargeRate = 75; //TODO: make this private later
+	public float powerupMass = 5; //TODO: make this private later
+	public float powerupSpeed = 3; //TODO: make this private later
+	private PowerupEffectScript powerupEffect;
+	// for adding juice to the game
+	private CameraShakeScript cameraShaker;
+	public float slowMotionKillSpeed = 0.03f; 
+	public float slowMotionKillDuration = 0.01f;
 
 	private ArrayList nearbyPlanets = new ArrayList();
-	public AudioClip orbCollectSound, landingSound, leavingSound, deathSound, dashSound, chargedSound, respawnSound;
+	private PlayerAudioScript playerAudio;
+	// coin combo variables
+	public int coinCombo;
+
+
 
 	public void Start () {
 		score = 0;
 		initialPosition = transform.position;
 		initialRotation = transform.rotation.eulerAngles;
+		powerupEffect = transform.GetChild(0).GetComponent<PowerupEffectScript>();
 
 		// keep track of the other player object for convenience
 		GameObject[] players = GameObject.FindGameObjectsWithTag ("Player");
@@ -50,6 +66,9 @@ public abstract class PlayerScript : MonoBehaviour {
 		else{
 			otherPlayer = players[0].GetComponent<PlayerScript>();
 		}
+
+		cameraShaker = GameObject.FindGameObjectsWithTag("MainCamera")[0].GetComponent<CameraShakeScript>();
+		playerAudio = GetComponent<PlayerAudioScript>();
 
 		// puts player in its initial state
 		ResetPlayerStates();
@@ -63,15 +82,9 @@ public abstract class PlayerScript : MonoBehaviour {
 				GetComponent<Rigidbody2D>().velocity += CalculateGravityPull();
 				//RotateToVelocity(); maybe this should be reserved for captain hook
 
-				// decrease power level when drifting
-				if (powerLevel > 0f){
+				// decrease power level when drifting, unless powerup charge is activated
+				if (activatedPowerup != PowerupScript.PowerupType.charge && powerLevel > 0f){
 					powerLevel -= Time.deltaTime * powerLevelDecayPerSecond;
-					if (powerLevel < 0f){
-						powerLevel = 0f;
-					}
-					else if (powerLevel > 100){
-						powerLevel = 100f;
-					}
 				}
 
 				// run an abstract class here that handles taking inputs for special actions
@@ -81,8 +94,12 @@ public abstract class PlayerScript : MonoBehaviour {
 				GetComponent<Rigidbody2D>().velocity = Vector2.zero;
 				//RotateToPlanet();
 
-				// increase power level when landed
-				powerLevel += currentPlanet.powerChargePerSecond * Time.deltaTime;
+				// increase power level when landed. if powerup charge is active, charge at the super fast rate
+				float chargeRate = currentPlanet.powerChargePerSecond;
+				if (activatedPowerup == PowerupScript.PowerupType.charge){
+					chargeRate = powerupChargeRate;
+				}
+				powerLevel += chargeRate * Time.deltaTime;
 
 				// enable jumping when powerlevel reaches a certain point
 				if (powerLevel < powerLevelUsedOnJump){
@@ -91,10 +108,27 @@ public abstract class PlayerScript : MonoBehaviour {
 				else{
 					if (canJump == false){
 						canJump = true;
-						GetComponent<AudioSource>().PlayOneShot(chargedSound);
+						playerAudio.PlayChargedSound();
 					}
 				}
 			}
+
+			// keep powerlevel locked in range no matter landed or drifting
+			if (powerLevel < 0f){
+				powerLevel = 0f;
+			}
+			else if (powerLevel > 100){
+				powerLevel = 100f;
+			}
+			// decrease powerup counter no matter landed or not if activated powerup is not none or barrier
+			if (activatedPowerup != PowerupScript.PowerupType.none && activatedPowerup != PowerupScript.PowerupType.barrier){
+				powerupCountdown -= Time.deltaTime;
+				if (powerupCountdown < 0){
+					activatedPowerup = PowerupScript.PowerupType.none;
+					powerupEffect.DeactivateAllEffects();
+				}
+			}
+
 		}
 		else{ 
 			// if player is dead, decrease the countdown timer
@@ -106,22 +140,21 @@ public abstract class PlayerScript : MonoBehaviour {
 				Respawn();
 			}
 		}
+
 	}
 
 	// on collision with the other player, compares scores and destroy the player with less speed
-	// TODO: this could use more explanation/animation to seem more apparent
+	// TODO: this could use more explanation/animation to seem more apparent. perhaps a quick zoom in
 	// TODO: what if both players have the same speed?
 	void OnCollisionEnter2D(Collision2D other) {
 		if (other.gameObject.tag == "Player") {
-			if (otherPlayer.GetComponent<PlayerScript>().GetIsLanded()){
-				otherPlayer.Suicide();
-			}
-			else if (GetComponent<Rigidbody2D>().velocity.magnitude >
-					other.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude){
+			if (otherPlayer.GetComponent<PlayerScript>().GetIsLanded() ||
+				GetComponent<Rigidbody2D>().velocity.magnitude > other.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude){
 				otherPlayer.Suicide();
 			}
 			else{
-				Suicide();
+				// only ever tell the other player to suicide so you don't die and give coins away twice
+				//Suicide();
 			}
 		}
 		else if (other.gameObject.tag == "Planet" && isDead == false && isLanded == false) {
@@ -136,6 +169,10 @@ public abstract class PlayerScript : MonoBehaviour {
 		canJump = false;
 		transform.parent = null;
 		currentPlanet = null;
+		activatedPowerup = PowerupScript.PowerupType.none;
+		powerupCountdown = 0;
+		powerupEffect.DeactivateAllEffects();
+		coinCombo = 0;
 		transform.position = initialPosition;
 		transform.eulerAngles = initialRotation;
 		powerLevel = powerLevelInitial;
@@ -153,8 +190,10 @@ public abstract class PlayerScript : MonoBehaviour {
 		// make sure that the player hasn't already landed
 		if (isLanded == false && currentPlanet == null){
 			isLanded = true;
+			// clear coin combo
+			coinCombo = 0;
 			currentPlanet = planet.GetComponent<PlanetScript>();
-			GetComponent<AudioSource>().PlayOneShot (landingSound);
+			playerAudio.PlayLandingSound();
 
 			// rotates and repositions the player accordingly
 			Vector3 difference = transform.position - currentPlanet.transform.position;
@@ -174,18 +213,22 @@ public abstract class PlayerScript : MonoBehaviour {
 	}
 
 	// sends player off a planet and blows it up
-	public void LeavePlanet(){
+	public void LeavePlanet(float chargedTime){
 		// make sure there is a currentplanet and the player can jump off it
 		if (isLanded && currentPlanet != null && canJump){
 			isLanded = false;
 			transform.parent = null;
 			canJump = false;
-			GetComponent<AudioSource>().PlayOneShot (leavingSound);
+			playerAudio.PlayLeavingSound();
 
 			Vector2 leavingAngle = new Vector2 (transform.position.x - currentPlanet.transform.position.x,
 			                            transform.position.y - currentPlanet.transform.position.y).normalized;
             // TODO: check if applyForce is better
-			GetComponent<Rigidbody2D>().velocity = leavingAngle * currentPlanet.explosionSpeed;
+            float leavingSpeed = currentPlanet.explosionSpeed;
+            if (activatedPowerup == PowerupScript.PowerupType.lighting){
+            	leavingSpeed *= powerupSpeed;
+            }
+			GetComponent<Rigidbody2D>().velocity = leavingAngle * leavingSpeed;
 			GetComponent<Rigidbody2D>().freezeRotation = false;
 
 			// consume powerLevel
@@ -248,7 +291,6 @@ public abstract class PlayerScript : MonoBehaviour {
 		respawnTimeCount = respawnTime;
 		GetComponent<SpriteRenderer>().enabled = false;
 		GetComponent<BoxCollider2D>().enabled = false;
-		GetComponent<AudioSource>().PlayOneShot(deathSound);
 		// give other player coins
 		int coinsTaken = coinsLostOnDeath;
 		if (score < coinsLostOnDeath){
@@ -256,6 +298,23 @@ public abstract class PlayerScript : MonoBehaviour {
 		}
 		score -= coinsTaken;
 		otherPlayer.score += coinsTaken;
+
+		StartCoroutine(ShowDeathEffect());
+	}
+
+	// Coroutine that does the effects for when a player dies
+	IEnumerator ShowDeathEffect(){
+		Time.timeScale = slowMotionKillSpeed;
+		cameraShaker.ShakeCamera(2f, 0.5f);
+		Handheld.Vibrate();
+		yield return new WaitForSeconds(slowMotionKillDuration);
+		Time.timeScale = 1f;
+		playerAudio.PlayDeathSound();
+	}
+
+	// called by other players instead of suicide when this player 
+	public void BarrierPop(Vector2 velocity){
+
 	}
 
 	// respawn the player by reactivating its components
@@ -264,14 +323,16 @@ public abstract class PlayerScript : MonoBehaviour {
 		GetComponent<SpriteRenderer>().enabled = true;
 		GetComponent<BoxCollider2D>().enabled = true;
 
-		GetComponent<AudioSource>().PlayOneShot(respawnSound);
+		playerAudio.PlayRespawnSound();
 	}
 
-	// TODO: reimplement this
 	private Vector2 CalculateGravityPull(){
 		Vector2 final = Vector2.zero;
 		float G = 6.67300f * 1f;  // should be 10 to the -11th power, but we're keeping planet mass low to compensate
 		float m = 1; // player mass
+		if (activatedPowerup == PowerupScript.PowerupType.lighting){
+			m = powerupMass;
+		}
 		foreach(GameObject p in nearbyPlanets) {
 			PlanetScript planet = p.GetComponent<PlanetScript>();
 			if (planet && planet.GetIsDestroyed() == false){
@@ -289,9 +350,36 @@ public abstract class PlayerScript : MonoBehaviour {
 		return final;
 	}
 
+	// function that the Orb object calls when it's been picked up by the player
 	public void AcquiredOrb(int orbValue){
-		score += orbValue;
-		GetComponent<AudioSource>().PlayOneShot (orbCollectSound);
+		coinCombo += 1;
+		score += orbValue * coinCombo;
+		// TODO: implement coin combo to value
+		//score += orbValue;
+		playerAudio.PlayOrbSound(coinCombo);
+	}
+
+	// function that the powerup object calls when it's been picked up by the player
+	// TODO: how to get enum from another file?
+	// TODO: investigate pssing anonymous functions
+	public void AcquiredPowerup(PowerupScript.PowerupType type, int duration, AudioClip sound){
+		powerupCountdown = duration;
+		activatedPowerup = type;
+		//TODOGetComponent<AudioSource>().PlayOneShot(sound);
+		powerupEffect.DeactivateAllEffects();
+		powerupEffect.ActivateEffect(type);
+		if (type == PowerupScript.PowerupType.barrier){
+			// barrier: extra life
+		}
+		else if (type == PowerupScript.PowerupType.charge){
+			// charge: max powerlevel
+		}
+		else if (type == PowerupScript.PowerupType.lighting){
+			// lightingbolt: max speed and mass
+		}
+		else if (type == PowerupScript.PowerupType.magnet){
+			// coin magnet
+		}
 	}
 
 	// does the player's action. to be implement by each different player class

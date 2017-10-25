@@ -7,14 +7,23 @@ public class PlanetScript : MonoBehaviour {
 	public float powerChargePerSecond; // speed at which a player's power will charge
 	public float rotationSpeed; // number of degrees the planet rotates every second
 	public float explosionSpeed; // speed the planet adds to the players on explosion
+	public bool respawn = true;
 	public float planetRespawnTime; // how long it takes for this planet to come back
 	private bool isDestroyed;
-	public Sprite regular, explosion;
+	// variables about planet cracking
+	public int maxCracks; // 2 cracks for big planets, 0 cracks for asteroids
+	private int crackedState; // 0, 1 or 2 cracks. 3 means destroyed.
 
-	public AudioClip explodeSound, respawnSound;
+	private PlanetGravityScript gravityField;
+	public Sprite regular, cracked1, cracked2, explosion;
+	public AudioClip explodeSound, respawnSound, crackSound1, crackSound2;
+	private CameraShakeScript cameraShaker;
 
 	void Start () {
 		isDestroyed = false;
+		crackedState = 0;
+		gravityField = transform.GetChild(0).GetComponent<PlanetGravityScript>();
+		cameraShaker = GameObject.FindGameObjectsWithTag("MainCamera")[0].GetComponent<CameraShakeScript>();
 	}
 
 	void Update () {
@@ -39,26 +48,52 @@ public class PlanetScript : MonoBehaviour {
 		return true;
 	}
 
-	// if i = 0 its inactive, if i = 1 it's active
-	public void ChangeSprite(int i){
-		if (i == 0) {
-			GetComponent<SpriteRenderer>().sprite = explosion;
-		}
-		else{
-			GetComponent<SpriteRenderer>().sprite = regular;
+	public void ChangeSprite(){
+		switch(crackedState){
+			case 0:
+				GetComponent<SpriteRenderer>().sprite = regular;
+				break;
+			case 1: 
+				GetComponent<SpriteRenderer>().sprite = cracked1;
+				break;
+			case 2: 
+				GetComponent<SpriteRenderer>().sprite = cracked2;
+				break;
+			case -1:
+				GetComponent<SpriteRenderer>().sprite = explosion;
+				break;
 		}
 	}
 
 	// called when another player blows this planet up
 	public void SelfDestruct(){
-		StartCoroutine(SelfDestructHelper());
+		// increments the cracked state and blow it up if it exceeds the max number of allowed cracks. 
+		// also do camera shake here? 
+		crackedState += 1;
+		cameraShaker.ShakeCamera(0.75f * crackedState, 0.2f * crackedState);
+		if (crackedState > maxCracks){
+			crackedState = -1;
+			StartCoroutine(SelfDestructHelper());
+		}
+		else{
+			ChangeSprite();
+			if(crackedState == 1){
+				GetComponent<AudioSource>().PlayOneShot(crackSound1);
+			}
+			else{
+				GetComponent<AudioSource>().PlayOneShot(crackSound2);
+			}
+
+		}
+
 	}
 
 	IEnumerator SelfDestructHelper(){
 		// TODO: change this to a better animation method
 		isDestroyed = true;
+		gravityField.enabled = false;
 		GetComponent<CircleCollider2D>().enabled = false;
-		ChangeSprite (0);
+		ChangeSprite ();
 		gameObject.GetComponent<AudioSource> ().PlayOneShot (explodeSound);
 		yield return new WaitForSeconds(0.2f);
 
@@ -70,7 +105,10 @@ public class PlanetScript : MonoBehaviour {
 		}
 		// stop rendering the planet
 		GetComponent<SpriteRenderer>().enabled = false;
-		// wait to respawn. 
+		// wait to respawn.if respawn time is lower than 0, then don't respawn
+		if (!respawn){
+			yield break;
+		}
 		yield return new WaitForSeconds(planetRespawnTime);
 		// check to make sure no one is too close, else wait a little longer
 		while (!CanSpawn()) {
@@ -78,7 +116,9 @@ public class PlanetScript : MonoBehaviour {
 		}
 		// start rendering the planet
 		isDestroyed = false;
-		ChangeSprite (1);
+		crackedState = 0;
+		ChangeSprite ();
+		gravityField.enabled = true;
 		GetComponent<SpriteRenderer>().enabled = true;
 		GetComponent<CircleCollider2D>().enabled = true;
 		GetComponent<AudioSource> ().PlayOneShot (respawnSound, 0.6f);

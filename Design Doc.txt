@@ -94,4 +94,18 @@ Phases
 	- simple progression system
 	- local practice mode with AI?
 
+	
+	
+	
+Endless runner idea
+- goal is to travel as far as possible
+	left and right side wraps, hitting top or bottom makes you lose
+	camera is fixed and recentered everytime you land on a planet. 
+		new base planet is placed on the bottom of the screen, so you only ever go up
+- collect coins
+	float around planets, you can fly directing into them on the way to another planet
+	bonus points for collecting multiple in a row
+- orbitng
+	collecting coins via orbiting gives you bonus points?
+	bonus points for flying by a planet without landing?
 

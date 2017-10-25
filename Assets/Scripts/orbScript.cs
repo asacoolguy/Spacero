@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class OrbScript : MonoBehaviour {
-	public int pointValue = 10;
+	public int pointValue;
 
 	// Use this for initialization
 	void Start () {
@@ -14,7 +14,7 @@ public class OrbScript : MonoBehaviour {
 	
 	}
 
-	// if a player enters the range, set it to land on the planet
+	// if a player enters the range, let the player pick this up
 	void OnTriggerEnter2D(Collider2D other) {
 		if (other.gameObject.tag == "Player") {
 			other.gameObject.GetComponent<PlayerScript>().AcquiredOrb(pointValue);

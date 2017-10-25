@@ -11,6 +11,10 @@ public class PlayerHUDScript : MonoBehaviour {
 	private Text text;
 	private Button jumpButton, actionButton;
 
+	// charge script
+	private float jumpButtonHeldTime;
+	private bool jumpButtonHeld;
+
 	void Start () {
 		// sets up all the GUI elements
 		text = transform.Find("score").gameObject.GetComponent<Text>();
@@ -19,8 +23,8 @@ public class PlayerHUDScript : MonoBehaviour {
 		jumpButton = transform.Find("Jump Button").gameObject.GetComponent<Button>();
 		actionButton = transform.Find("Action Button").gameObject.GetComponent<Button>();
 
-		jumpButton.onClick.AddListener(() => player.LeavePlanet());
-		actionButton.onClick.AddListener(() => player.ActivatePlayerAction());
+		jumpButtonHeld = false;
+		jumpButtonHeldTime = 0f;
 
 		DisableHUDInteraction();
 	}
@@ -36,6 +40,21 @@ public class PlayerHUDScript : MonoBehaviour {
 		else{
 			DisableHUDInteraction();
 		}
+
+		if (jumpButtonHeld){
+			jumpButtonHeldTime += Time.deltaTime;
+		}
+
+	}
+
+	public void StartJumpButtonPress(){
+		jumpButtonHeld = true;
+	}
+
+	public void EndJumpButtonPress(){
+		jumpButtonHeld = false;
+		player.LeavePlanet(jumpButtonHeldTime);
+		jumpButtonHeldTime = 0f;
 	}
 
 	public void DisableHUDInteraction(){
