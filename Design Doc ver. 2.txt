@@ -1,0 +1,84 @@
+Spacero Design Doc version 2
+
+Description
+- 2D mobile local multiplayer game 
+- Like Warioware but in SPACE
+- Difference from other mini-game games:
+	same controls from stage to stage
+
+Game Modes
+- 1p practice mode: practice stages by yourself and try to get high scores
+- 2p tournament mode: play through a series of maps with friend
+	player can choose best 2 out of 3, 3 out of 5, 4 out of 7
+	each map has a different objective. tournament will try to use maps with different 
+		objectives. each object should have a few maps with randomized things.
+
+Basic Gameplay (common across all objectives)
+- Planets orbit in space
+	asteroids: fast rotation, small gravity, used for orientation and position
+	big planets: slow rotation, big gravity, used for orbital runs
+		sometimes contains coins or powerups (you can tell by the sprite)
+	Space debris: varid rotation speed, cannot land. bounces players off
+	Blackholes: no rotation, big gravity, used for orbital runs
+		kills players that get too slow
+	Deathplanets: rotates slowly, periodically shoots out destructive beams to avoid
+- Press space to jump
+	tap to jump at a slow speed, hold and release for fast charged jump
+	jumping off planets damages it. 
+		small planets will explode (and respawn)
+		bigger planets will crack and then explode (and respawn)
+- Kill other players 
+	either by blowing up the planet they're on
+	or jump running into them at a higher speed
+- Collect things by flying into them
+	coins, power ups, etc
+	rack up combos for coins for more points
+- Orbital slings
+	aim slightly off a big planet to use the planet's gravity to change your flight course
+	used to get to otherwise inaccessible locations
+- Special skills
+	default skill is to slowly fly towards nearest planet
+	use powerups to get new skills 
+		dash forward
+		hookshot
+		enlarge
+		teleport
+		
+		
+Different objectives
+- Collect most coins
+- Destroy most planets
+- Hunt floating aliens (essentially just floating coins but they move)
+- bring a satelite to a certain region
+- survive in a hostile environment
+
+
+Development phases
+- phase 1: basic game for alpha testing -- by 11/10
+	fix some bugs first
+	Timer and score tracker
+	Make a planet cracking map
+	Make a menu system to switch between maps
+	Simple animation to transition from map to map
+	Make 2 maps of every game mode
+		coin collection
+		planet destruction
+		alien hunting
+		satelite soccer
+		hostile survival
+	Make a basic overall game menu to select game mode
+- phase 2: polish the game
+	Special skills
+	music
+		background music
+		sound effects
+	art 
+		players
+		planets
+		pick ups
+		backgrounds
+		menus
+	special effects
+		landing
+		take off
+		pick up

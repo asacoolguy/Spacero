@@ -51,10 +51,10 @@ Game modes
 
 To do
 - implement power ups
-- implement planet cracking
 - Remake HUD
 	button should react when pressed, shake when can't be pressed
 - rethink about the powerlevel thing
+	
 - better death animation when players wins through collision
 - move game states into event system
 - make a proper menu
@@ -94,8 +94,10 @@ Phases
 	- simple progression system
 	- local practice mode with AI?
 
-	
-	
+
+BUGs
+- sometimes after colliding with a player on a planet, the winner would just float	
+
 	
 Endless runner idea
 - goal is to travel as far as possible

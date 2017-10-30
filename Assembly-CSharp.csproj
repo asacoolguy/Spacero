@@ -46,20 +46,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\CameraShakeScript.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\CaptainSpaceScript.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\PlayerAudioScript.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\PlayerScript.cs" />
      <Compile Include="Assets\Scripts\Character Scripts\PowerupEffectScript.cs" />
-     <Compile Include="Assets\Scripts\ManagerScript.cs" />
-     <Compile Include="Assets\Scripts\MusicManager.cs" />
-     <Compile Include="Assets\Scripts\OrbScript.cs" />
-     <Compile Include="Assets\Scripts\OrbitScript.cs" />
-     <Compile Include="Assets\Scripts\PlanetGravityScript.cs" />
-     <Compile Include="Assets\Scripts\PlanetScript.cs" />
-     <Compile Include="Assets\Scripts\PlayerHUDScript.cs" />
-     <Compile Include="Assets\Scripts\PowerupScript.cs" />
-     <Compile Include="Assets\Scripts\menuScript.cs" />
+     <Compile Include="Assets\Scripts\General Utility Scripts\CameraShakeScript.cs" />
+     <Compile Include="Assets\Scripts\General Utility Scripts\GameManager.cs" />
+     <Compile Include="Assets\Scripts\General Utility Scripts\MapManager.cs" />
+     <Compile Include="Assets\Scripts\General Utility Scripts\MusicManager.cs" />
+     <Compile Include="Assets\Scripts\Pick-up Scripts\OrbScript.cs" />
+     <Compile Include="Assets\Scripts\Pick-up Scripts\PowerupScript.cs" />
+     <Compile Include="Assets\Scripts\Planet scripts\OrbitScript.cs" />
+     <Compile Include="Assets\Scripts\Planet scripts\PlanetGravityScript.cs" />
+     <Compile Include="Assets\Scripts\Planet scripts\PlanetScript.cs" />
+     <Compile Include="Assets\Scripts\UI Scripts\MainMenuScript.cs" />
+     <Compile Include="Assets\Scripts\UI Scripts\PlayerHUDScript.cs" />
+     <Compile Include="Assets\Scripts\UI Scripts\PostGameNotifier.cs" />
+     <Compile Include="Assets\Scripts\UI Scripts\PreGameNotifier.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>D:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

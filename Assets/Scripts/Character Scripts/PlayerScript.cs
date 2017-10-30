@@ -15,6 +15,7 @@ public abstract class PlayerScript : MonoBehaviour {
 	private int score;
 	private Vector3 initialPosition;
 	private Vector3 initialRotation;
+	private Vector2 currentVelocity;
 	private PlanetScript currentPlanet;
 	private PlayerScript otherPlayer;
 	// respawn variables
@@ -27,6 +28,10 @@ public abstract class PlayerScript : MonoBehaviour {
 	private float powerLevel;
 	public float powerLevelDecayPerSecond;
 	public float powerLevelUsedOnJump;
+	// new powerlevel stuff
+	public float maxChargeTime;
+	public float maxChargeSpeed;
+
 	// bossting stuff. saved for later 
 	/*public float dashDuration;
 	private float currentDashDuration;
@@ -44,13 +49,16 @@ public abstract class PlayerScript : MonoBehaviour {
 	private CameraShakeScript cameraShaker;
 	public float slowMotionKillSpeed = 0.03f; 
 	public float slowMotionKillDuration = 0.01f;
+	private PlayerHUDScript playerHUD;
 
 	private ArrayList nearbyPlanets = new ArrayList();
 	private PlayerAudioScript playerAudio;
 	// coin combo variables
 	public int coinCombo;
 
-
+	public void Awake(){
+		playerAudio = GetComponent<PlayerAudioScript>();
+	}
 
 	public void Start () {
 		score = 0;
@@ -68,7 +76,7 @@ public abstract class PlayerScript : MonoBehaviour {
 		}
 
 		cameraShaker = GameObject.FindGameObjectsWithTag("MainCamera")[0].GetComponent<CameraShakeScript>();
-		playerAudio = GetComponent<PlayerAudioScript>();
+
 
 		// puts player in its initial state
 		ResetPlayerStates();
@@ -80,12 +88,13 @@ public abstract class PlayerScript : MonoBehaviour {
 			if (!isLanded){ 
 				// if player is drifting, it should move based on gravity from nearby planets and rotate to face forwards
 				GetComponent<Rigidbody2D>().velocity += CalculateGravityPull();
+				currentVelocity = GetComponent<Rigidbody2D>().velocity;
 				//RotateToVelocity(); maybe this should be reserved for captain hook
 
 				// decrease power level when drifting, unless powerup charge is activated
-				if (activatedPowerup != PowerupScript.PowerupType.charge && powerLevel > 0f){
+				/*if (activatedPowerup != PowerupScript.PowerupType.charge && powerLevel > 0f){
 					powerLevel -= Time.deltaTime * powerLevelDecayPerSecond;
-				}
+				}*/
 
 				// run an abstract class here that handles taking inputs for special actions
 			}
@@ -99,10 +108,10 @@ public abstract class PlayerScript : MonoBehaviour {
 				if (activatedPowerup == PowerupScript.PowerupType.charge){
 					chargeRate = powerupChargeRate;
 				}
-				powerLevel += chargeRate * Time.deltaTime;
+				//powerLevel += chargeRate * Time.deltaTime;
 
 				// enable jumping when powerlevel reaches a certain point
-				if (powerLevel < powerLevelUsedOnJump){
+				/*if (powerLevel < powerLevelUsedOnJump){
 					canJump = false;
 				}
 				else{
@@ -110,11 +119,11 @@ public abstract class PlayerScript : MonoBehaviour {
 						canJump = true;
 						playerAudio.PlayChargedSound();
 					}
-				}
+				}*/
 			}
 
 			// keep powerlevel locked in range no matter landed or drifting
-			if (powerLevel < 0f){
+			/*if (powerLevel < 0f){
 				powerLevel = 0f;
 			}
 			else if (powerLevel > 100){
@@ -127,7 +136,7 @@ public abstract class PlayerScript : MonoBehaviour {
 					activatedPowerup = PowerupScript.PowerupType.none;
 					powerupEffect.DeactivateAllEffects();
 				}
-			}
+			}*/
 
 		}
 		else{ 
@@ -145,11 +154,15 @@ public abstract class PlayerScript : MonoBehaviour {
 
 	// on collision with the other player, compares scores and destroy the player with less speed
 	// TODO: this could use more explanation/animation to seem more apparent. perhaps a quick zoom in
+	// TODO: fix the bug where both players would die sometimes, start by printing out player state on death
 	// TODO: what if both players have the same speed?
 	void OnCollisionEnter2D(Collision2D other) {
 		if (other.gameObject.tag == "Player") {
-			if (otherPlayer.GetComponent<PlayerScript>().GetIsLanded() ||
+			if (isLanded == false && otherPlayer.GetComponent<PlayerScript>().GetIsLanded() ||
 				GetComponent<Rigidbody2D>().velocity.magnitude > other.gameObject.GetComponent<Rigidbody2D>().velocity.magnitude){
+				playerAudio.PlayCollisionSound();
+				// collision messes with the rigidbody's velocity to reset it to what was recorded last frame
+				GetComponent<Rigidbody2D>().velocity = currentVelocity;
 				otherPlayer.Suicide();
 			}
 			else{
@@ -175,14 +188,29 @@ public abstract class PlayerScript : MonoBehaviour {
 		coinCombo = 0;
 		transform.position = initialPosition;
 		transform.eulerAngles = initialRotation;
-		powerLevel = powerLevelInitial;
+		//powerLevel = powerLevelInitial;
 		nearbyPlanets.Clear();
 
-		// give a random starting velocity to prevent being stuck
+		// give a starting velocity to nearest planet. if no planets exist, then just assign random velocity
 		float startingSpeed = 5f;
-		float angle = Random.Range(0,360) * Mathf.Deg2Rad;
-		GetComponent<Rigidbody2D>().velocity = new Vector2(Mathf.Cos(angle) * startingSpeed,
-															Mathf.Sin(angle) * startingSpeed);
+		GameObject nearestPlanet = null;
+		float nearestDistance = 9999f;
+		foreach (GameObject planet in GameObject.FindGameObjectsWithTag("Planet")){
+			float newDistance = Vector3.Distance(planet.transform.position, transform.position);
+			if (newDistance < nearestDistance){
+				nearestDistance = newDistance;
+				nearestPlanet = planet;
+			}
+		}
+		if (nearestPlanet != null){
+			Vector2 startingDirection = (nearestPlanet.transform.position - transform.position).normalized;
+			GetComponent<Rigidbody2D>().velocity = startingDirection * startingSpeed;
+		}
+		else{
+			float angle = Random.Range(0,360) * Mathf.Deg2Rad;
+			GetComponent<Rigidbody2D>().velocity = new Vector2(Mathf.Cos(angle) * startingSpeed,
+																Mathf.Sin(angle) * startingSpeed);
+		}
 	}
 
 	// helper function that lands the player onto a given planet
@@ -190,6 +218,7 @@ public abstract class PlayerScript : MonoBehaviour {
 		// make sure that the player hasn't already landed
 		if (isLanded == false && currentPlanet == null){
 			isLanded = true;
+			canJump = true; // TODO: implement a brief delay when you land where you can't jump
 			// clear coin combo
 			coinCombo = 0;
 			currentPlanet = planet.GetComponent<PlanetScript>();
@@ -213,7 +242,7 @@ public abstract class PlayerScript : MonoBehaviour {
 	}
 
 	// sends player off a planet and blows it up
-	public void LeavePlanet(float chargedTime){
+	public void LeavePlanet(float chargeTime){
 		// make sure there is a currentplanet and the player can jump off it
 		if (isLanded && currentPlanet != null && canJump){
 			isLanded = false;
@@ -224,7 +253,10 @@ public abstract class PlayerScript : MonoBehaviour {
 			Vector2 leavingAngle = new Vector2 (transform.position.x - currentPlanet.transform.position.x,
 			                            transform.position.y - currentPlanet.transform.position.y).normalized;
             // TODO: check if applyForce is better
-            float leavingSpeed = currentPlanet.explosionSpeed;
+            float leavingSpeed = maxChargeSpeed / 2f;
+            if (chargeTime >= maxChargeTime){
+            	leavingSpeed = maxChargeSpeed;
+            }
             if (activatedPowerup == PowerupScript.PowerupType.lighting){
             	leavingSpeed *= powerupSpeed;
             }
@@ -232,17 +264,18 @@ public abstract class PlayerScript : MonoBehaviour {
 			GetComponent<Rigidbody2D>().freezeRotation = false;
 
 			// consume powerLevel
-			powerLevel -= powerLevelUsedOnJump;
+			//powerLevel -= powerLevelUsedOnJump;
 
-			// kills the other player if they're on this planet too
+			// kills the other player if they're on this planet and it will explode
 			if (otherPlayer.isDead == false && otherPlayer.currentPlanet != null &&
-			    otherPlayer.currentPlanet.gameObject == this.currentPlanet.gameObject){
+			    otherPlayer.currentPlanet.gameObject == this.currentPlanet.gameObject &&
+			    currentPlanet.WillExplodeNext()){
 				otherPlayer.Suicide();
 			}
 
 			nearbyPlanets.Remove (currentPlanet.gameObject);
 			currentPlanet.SelfDestruct();
-			currentPlanet = null;		
+			currentPlanet = null;
 		}
 	}
 
@@ -296,8 +329,9 @@ public abstract class PlayerScript : MonoBehaviour {
 		if (score < coinsLostOnDeath){
 			coinsTaken = score;
 		}
-		score -= coinsTaken;
+		ObtainPoints(-1 * coinsTaken);
 		otherPlayer.score += coinsTaken;
+		otherPlayer.ObtainPoints(coinsTaken);
 
 		StartCoroutine(ShowDeathEffect());
 	}
@@ -351,12 +385,18 @@ public abstract class PlayerScript : MonoBehaviour {
 	}
 
 	// function that the Orb object calls when it's been picked up by the player
-	public void AcquiredOrb(int orbValue){
+	public void AcquiredOrb(int orbValue, Vector3 orbPosition){
 		coinCombo += 1;
-		score += orbValue * coinCombo;
-		// TODO: implement coin combo to value
-		//score += orbValue;
+		int gainedPts = orbValue *coinCombo;
+		score += gainedPts;
+		playerHUD.ShowFloatingText(gainedPts, orbPosition);
 		playerAudio.PlayOrbSound(coinCombo);
+	}
+
+	// function that any object can call when the player gets or loses points
+	public void ObtainPoints(int value){
+		score += value;
+		playerHUD.ShowFloatingText(value, transform.position);
 	}
 
 	// function that the powerup object calls when it's been picked up by the player
@@ -427,6 +467,14 @@ public abstract class PlayerScript : MonoBehaviour {
 
 	public void SetPlayerID(int id){
 		playerID = id;
+	}
+
+	public PlayerAudioScript GetPlayerAudio(){
+		return playerAudio;
+	}
+
+	public void SetPlayerHUD(PlayerHUDScript HUD){
+		playerHUD = HUD;
 	}
 
 	public void AddNearByPlanet(GameObject planet){
