@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Assets/Scenes/Planet Cracker.unity
+- path: Assets/Scenes/Galaxy 1/Coin Intro.unity
   isLoaded: 1
   isActive: 1

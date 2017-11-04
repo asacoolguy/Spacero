@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PlanetScript : MonoBehaviour { 
-	public int type; // 1 for asteroid, 2 for big planet
+	[SerializeField]private int pointValue;
 	public float mass; // mass of the planet, affects its gravitation pull
 	public float powerChargePerSecond; // speed at which a player's power will charge
 	public float rotationSpeed; // number of degrees the planet rotates every second
@@ -131,5 +131,9 @@ public class PlanetScript : MonoBehaviour {
 
 	public bool GetIsDestroyed(){
 		return isDestroyed;
+	}
+
+	public int GetPointValue(){
+		return pointValue;
 	}
 }

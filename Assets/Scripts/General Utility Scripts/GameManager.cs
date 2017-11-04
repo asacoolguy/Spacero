@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour {	
 	// singleton behavior
 	public static GameManager instance = null;
+	private bool gameLooping;
 
 	// UI stuff
 	private PlayerHUDScript player1HUD, player2HUD;
@@ -16,24 +17,24 @@ public class GameManager : MonoBehaviour {
 	private PostGameNotifier postGameNotifier;
 	private PlayerScript player1, player2;
 
-	// game states
-	// TODO: do we even need these
-	public enum GameState{
-		MainMenu, PreGameHint, GameRunning, GameOver, MapTransition, GameResults
-	};
-	//public GameState gameState;
-	private bool gameLooping;
-
-
 	// timer
 	private float timeLimit;
 	private float timeLeft;
 
-	// tracking gameobjects
-	public AudioClip winningSound;
+	// tournament info
+	[SerializeField]private string[] mapNames;
+	private int currentMapIndex;
+	[SerializeField]private int roundsRequiredToWin;
+	private int currentRound;
+	[SerializeField]private int player1WinCount;
+	[SerializeField]private int player2Wincount;
 
-	// tracking maps
+	// getting this map's info
 	private MapManager mapManager;
+
+	// developer tools
+	public bool showPreNotification = true;
+	public bool showPostNotification = true;
 
 	void OnEnable(){
 		SceneManager.sceneLoaded += OnSceneFinishedLoading;
@@ -63,42 +64,21 @@ public class GameManager : MonoBehaviour {
 
 	}
 
-
-	// do nothing in main menu state. start the game loop when map is loaded
-	/*
-	private IEnumerator MainMenuLoop(){
-		 while(this.gameState == GameState.MainMenu){
-			// TODO: in the future, saved data about stage and character unlocks should be read here
-			yield return null;
-		}
-
-		// once the game is out of the MainMenu state, start the game loop
-		if (this.gameState == GameState.PreGameHint){
-			StartCoroutine(GameLoop());
-		}
-		else{
-			Debug.Log("MainMenuLoop didn't start the GameLoop correctly");
-		}
-	}
-	*/
-
 	// loop that is run once on every map
 	private IEnumerator GameLoop(){
 		if (gameLooping == false){
 			gameLooping = true;
 
 			// show this map's objective before the game starts
-			yield return StartCoroutine(ShowGameObjective());
-			// TODO: do we even need game states for individual phases of a map? or can we just delegate everything in the game loop?
+			if (showPreNotification)
+				yield return StartCoroutine(ShowGameObjective());
 
 			// run the game 
 			yield return StartCoroutine(RunGame());
 
 			// end the game, show results 
-			yield return StartCoroutine(GameOver());
-
-			// load the next map
-			this.LoadMap("Gambit");
+			if (showPostNotification)
+				yield return StartCoroutine(GameOver());
 		}
 		else{
 			Debug.Log("error: gameloop cannot start because game is already looping!");
@@ -110,8 +90,11 @@ public class GameManager : MonoBehaviour {
 		player1HUD.GetComponent<PlayerHUDScript>().SetIsHUDActive(false);
 		player2HUD.GetComponent<PlayerHUDScript>().SetIsHUDActive(false);
 
-		// TODO: improve animation for showing objectives 
+		// TODO: improve animation for showing objectives
+		// initial wait for player to orient themselves with the map 
 		yield return new WaitForSeconds(0.5f);
+
+		preGameNotifier.SetUpText(currentRound, mapManager.GetPreGameObjectiveText());
 
 		yield return StartCoroutine(preGameNotifier.DisplayNotification());
 
@@ -138,26 +121,50 @@ public class GameManager : MonoBehaviour {
 		player1HUD.GetComponent<PlayerHUDScript>().SetIsHUDActive(false);
 		player2HUD.GetComponent<PlayerHUDScript>().SetIsHUDActive(false);
 		// find the winner
-		PlayerScript winner = player1; // TODO: actually find winner
+		// TODO: for now score is king. when other win conditions come in, move this code elsewhere
+		PlayerScript winner = null; 
 		if (player1.GetScore() > player2.GetScore()){
 			winner = player1;
+			player1WinCount += 1;
 		}
 		else if(player2.GetScore() > player1.GetScore()){
 			winner = player2;
-		}
-		else{
-			//TODO: tie condition
-			Debug.Log("This is a tie");
+			player2Wincount += 1;
 		}
 
-		// show results
+		// show the game over text first
 		yield return StartCoroutine(postGameNotifier.DisplayGameOverText());
 
+		// give info to postGameNotifier
+		postGameNotifier.SetUpText(mapManager.GetPostGameObjectiveText(), player1.GetScore(), player2.GetScore(), winner);
+
+		// display the results of the game
 		yield return StartCoroutine(postGameNotifier.DisplayNotification());
 
-		yield return new WaitForSeconds(5f); //TODO: this needs to be determined via a variable
+		// if a player has won the tournament, display tournament results
+		if (Mathf.Max(player1WinCount, player2Wincount) >= roundsRequiredToWin){
+			// TODO: make a nice tournament results menu
+			if (player1WinCount > player2Wincount){
+				Debug.Log("Player 1 won");
+			}
+			else{
+				Debug.Log("Player 2 won");
+			}
+			SceneManager.LoadScene("Main Menu");
+		}
+		// otherwise the tournament keeps going
+		else{
+			// countdown to the next map
+			yield return StartCoroutine(postGameNotifier.CountDownToNextMap());
 
-		gameLooping = false;
+			gameLooping = false;
+
+			// load the next map
+			currentMapIndex += 1;
+			// if we are on the last map 
+			LoadMap(mapNames[currentMapIndex % mapNames.Length]);
+		}
+
 	}
 
 	// runs when the scene is loaded, sets up variables for this scene
@@ -181,21 +188,11 @@ public class GameManager : MonoBehaviour {
 			// get Map info from mapManager
 			timeLimit = mapManager.timeLimit;
 			timeLeft = timeLimit;	
+			// increase round 
+			currentRound += 1;
 
 			StartCoroutine(GameLoop());
 		}
-	}
-
-	public void PlayerWin(PlayerScript winningPlayer){
-		/*gameoverScreen.SetActive(true);
-		int id = winningPlayer.GetPlayerID();
-		// TODO: make a menu script that handles this stuff
-		gameoverScreen.transform.Find("Win Text").GetComponent<Text>().text = "Player " + id + " wins!";
-		gameoverScreen.transform.Find("Reset Button").GetComponent<Button>().onClick.AddListener(() => this.LoadMap("Gambit"));
-
-		GetComponent<AudioSource> ().PlayOneShot (winningSound);
-		//gameOver = true;
-		*/
 	}
 
 	// resets this map
@@ -209,4 +206,18 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
+	// called by Main Menu to start a certain tournament, given all the required info
+	public void StartGalaxy(int roundsRequired, string[] mapNames){
+		if (gameLooping == false){
+			roundsRequiredToWin = roundsRequired;
+			currentRound = 0;
+			player1WinCount = 0;
+			player2Wincount = 0;
+
+			this.mapNames = mapNames;
+			currentMapIndex = 0;
+
+			LoadMap(this.mapNames[currentMapIndex]);
+		}
+	}
 }

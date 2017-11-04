@@ -11,7 +11,7 @@ public class MapManager : MonoBehaviour {
 		coinCollect, planetCrack, alienHunt, sateliteSoccer, survive
 	}
 
-	private MapType currentMapType ;
+	public MapType mapType ;
 	private Vector2 boundaries;
 	public GameObject player1, player2, gameCanvas;
 	public float timeLimit;
@@ -51,13 +51,30 @@ public class MapManager : MonoBehaviour {
 		}
 	}
 
-	// used by GameManager to set up the map
-	/*public void SetUpMap(MapType type, GameObject playerObj1, GameObject playerObj2, float time){
-		currentMapType = type;
-		player1 = playerObj1.GetComponent<PlayerScript>();
-		player2 = playerObj2.GetComponent<PlayerScript>();
-		timeLimit = time;
-	}*/
+
+	// returns the corresponding objective text based on the type of map
+	public string GetPreGameObjectiveText(){
+		switch(this.mapType){
+			case MapType.coinCollect:
+				return "Collect All The Coins!";
+			case MapType.planetCrack:
+				return "Destroy All The Planets!";
+			default:
+				return "Some other map type objective";
+		}
+	}
+
+	// returns the corresponding objective text based on the type of map
+	public string GetPostGameObjectiveText(){
+		switch(this.mapType){
+			case MapType.coinCollect:
+				return "Coins collected:";
+			case MapType.planetCrack:
+				return "Planets destroyed:";
+			default:
+				return "Some other map type objective";
+		}
+	}
 
 	// function that detects which player won the game. differs based on the type of map this is.
 	// returns the id of the player that won, or -1 if it's a tie

@@ -52,14 +52,21 @@ Different objectives
 - bring a satelite to a certain region
 - survive in a hostile environment
 
+thoughts
+- okay so the plan was to have many different maps of different objectives and rotate between them randomly from for different cups
+- but does that make it hard to balance? maybe not. the game should just be shorter and easier and more dumb fun. 
+- maybe different cups have increasingly difficult and interesting maps. first cup, just collect coins and maybe kill eachother. second cup, add in crackable planets. etc.
+- set number of games and then count scores from all games for winner like mario kart?
+- or keep playing until there's a winner like in towerfall? -> maybe this b/c it's 1v1 afterall. 
+
 
 Development phases
 - phase 1: basic game for alpha testing -- by 11/10
-	fix some bugs first
-	Timer and score tracker
-	Make a planet cracking map
-	Make a menu system to switch between maps
-	Simple animation to transition from map to map
+	fix some bugs first - done
+	Timer and score tracker - done
+	Make a planet cracking map - done
+	Make a menu system to switch between maps - almost
+	Simple animation to transition from map to map - done
 	Make 2 maps of every game mode
 		coin collection
 		planet destruction
@@ -82,3 +89,9 @@ Development phases
 		landing
 		take off
 		pick up
+		
+		
+		
+		set text color with
+// Create a string using the correct color that says 'PLAYER 1' etc based on the tank's color and the player's number.
+        m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";

@@ -5,55 +5,39 @@ using UnityEngine.UI;
 
 public class PreGameNotifier : MonoBehaviour {
 	private Image image;
-	public GameObject[] texts;
-	public GameObject countdown;
+	public GameObject countdown, roundText, objectiveText;
 
-	private float maxAlpha;
-	public float imageFadeDuration, textFadeDuration, displayDuration, secondsPerCount;
+	public float displayDuration;
 	public AudioClip countdownSound, startSound;
+
+	private Animator animator;
 
 	// Use this for initialization
 	void Awake () {
 		image = this.GetComponent<Image>();
 
-		maxAlpha = image.color.a;
-		ResetImageText();
-		ResetCountdown();
+		EnableImageText(false);
+		countdown.SetActive(false);
+
+		animator = GetComponent<Animator>();
 	}
 
 
 	// slowly fade in the image and the text at the designated speed, one by one
 	public IEnumerator DisplayNotification(){
 		// first enable the images and texts back up
-		image.enabled = true;
-		foreach (GameObject textObj in texts){
-			textObj.SetActive(true);
-		}
-		// dummy variable used to help set the alpha of color
-		Color newColor;
-		
-		float imageFadeSpeed = Mathf.Abs(maxAlpha - image.color.a) / imageFadeDuration;
-		float textFadeSpeed = 1f / textFadeDuration;
+		EnableImageText(true);
 
-		// first fade in image color
-		while(!Mathf.Approximately(image.color.a, maxAlpha)){
-			newColor = image.color;
-			newColor.a = Mathf.MoveTowards(image.color.a, maxAlpha, imageFadeSpeed * Time.deltaTime);;
-			image.color = newColor;
+		// play the animation to show notifications
+		animator.SetBool("ShowNotification", true);
+
+		yield return null;
+
+		// wait until we're in the animation state, then wait for the animation to finish
+		while(!animator.GetCurrentAnimatorStateInfo(0).IsName("Fade In")){
 			yield return null;
 		}
-
-		// then fade in the texts one by one
-		foreach(GameObject textObj in texts){
-			while(!Mathf.Approximately(textObj.GetComponentInChildren<Text>().color.a, 1f)){
-				foreach(Text text in textObj.GetComponentsInChildren<Text>()){
-					newColor = text.color;
-					newColor.a = Mathf.MoveTowards(text.color.a, 1f, textFadeSpeed * Time.deltaTime);
-					text.color = newColor;
-				}
-				yield return null;
-			}
-		}
+		yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
 
 		// show the info for a set amount of seconds
 		yield return new WaitForSeconds(displayDuration);
@@ -62,28 +46,16 @@ public class PreGameNotifier : MonoBehaviour {
 
 	// slowly fade out the image and the text at the designated speed, all together
 	public IEnumerator HideNotification(){
-		float imageFadeSpeed = Mathf.Abs(0f - image.color.a) / imageFadeDuration;
-		float textFadeSpeed = 1f / textFadeDuration;
-		// dummy variable used to set up colors
-		Color newColor;
+		animator.SetBool("ShowNotification", false);
 
-		while(!Mathf.Approximately(image.color.a, 0f)){
-			newColor = image.color;
-			newColor.a = Mathf.MoveTowards(image.color.a, 0f, imageFadeSpeed * Time.deltaTime);
-			image.color = newColor;
-			foreach (GameObject textObj in texts){
-				foreach(Text text in textObj.GetComponentsInChildren<Text>()){
-					newColor = text.color;
-					newColor.a = Mathf.MoveTowards(text.color.a, 0f, textFadeSpeed * Time.deltaTime);
-					text.color = newColor;
-				}
-			}
-
+		// wait until we're in the animation state, then wait for the animation to finish
+		while(!animator.GetCurrentAnimatorStateInfo(0).IsName("Fade Out")){
 			yield return null;
 		}
+		yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
 
 		// make sure the values are at the target and disable them
-		ResetImageText();
+		EnableImageText(false);
 	}
 
 
@@ -96,7 +68,7 @@ public class PreGameNotifier : MonoBehaviour {
 				text.text = i.ToString();
 			}
 			this.GetComponent<AudioSource>().PlayOneShot(countdownSound);
-			yield return new WaitForSeconds(secondsPerCount);
+			yield return new WaitForSeconds(1f);
 		}
 
 		foreach(Text text in countdown.GetComponentsInChildren<Text>()){
@@ -104,29 +76,27 @@ public class PreGameNotifier : MonoBehaviour {
 		}
 		this.GetComponent<AudioSource>().PlayOneShot(startSound);
 
-		yield return new WaitForSeconds(secondsPerCount);
-		ResetCountdown();
+		yield return new WaitForSeconds(1f);
+		countdown.SetActive(false);
 	}
 
-	// sets the image and texts to their default hidden state and then disable them
-	private void ResetImageText(){
-		Color imageColor = image.color;
-		imageColor.a = 0f;
-		image.color = imageColor;
-		image.enabled = false;
 
-		foreach(GameObject textObj in texts){
-			foreach(Text text in textObj.GetComponentsInChildren<Text>()){
-				Color c = text.color;
-				c.a = 0f;
-				text.color = c;
-			}
-			textObj.SetActive(false);
+	// sets up the text objects with info
+	public void SetUpText(int roundNumber, string objective){
+		foreach(Text text in roundText.GetComponentsInChildren<Text>()){
+			text.text = "Round " + roundNumber;
+		}
+		foreach(Text text in objectiveText.GetComponentsInChildren<Text>()){
+			text.text = objective;
 		}
 	}
 
-	// sets the countdown to its default hidden state and disable it
-	private void ResetCountdown(){
-		countdown.SetActive(false);
+
+	// disable image and test
+	private void EnableImageText(bool b){
+		image.enabled = b;
+		roundText.SetActive(b);
+		objectiveText.SetActive(b);
 	}
+
 }

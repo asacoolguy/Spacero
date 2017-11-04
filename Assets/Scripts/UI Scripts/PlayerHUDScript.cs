@@ -29,7 +29,6 @@ public class PlayerHUDScript : MonoBehaviour {
 		actionButton = transform.Find("Action Button").gameObject.GetComponent<Button>();
 
 		player = playerObj.GetComponent<PlayerScript>();
-		playerAudio = player.GetPlayerAudio();
 		player.SetPlayerHUD(this);
 
 		jumpButtonHeld = false;
@@ -40,6 +39,10 @@ public class PlayerHUDScript : MonoBehaviour {
 
 		//EnableHUDInteraction(false);
 		isHUDActive = false;
+	}
+
+	void Start(){
+		playerAudio = player.GetPlayerAudio();
 	}
 
 	// Update is called once per frame
@@ -89,17 +92,19 @@ public class PlayerHUDScript : MonoBehaviour {
 
 	public void EndJumpButtonPress(){
 		if (isHUDActive && player.GetCanJump()){
-			jumpButtonHeld = false;
-			jumpButtonHeldMaxedOut = false;
 			player.LeavePlanet(jumpButtonHeldTime);
-			playerAudio.StopChargingSound();
-			jumpButtonHeldTime = 0f;
+			ResetChargeButton();
 		}
 	}
 
 	public void EnableHUDInteraction(bool b){
 		jumpButton.interactable = b;
 		actionButton.interactable = b;
+
+		// stop charging when the HUD is disabled
+		if (b == false){
+			ResetChargeButton();
+		}
 	}
 
 	public void ShowFloatingText(int value, Vector3 position){
@@ -130,6 +135,13 @@ public class PlayerHUDScript : MonoBehaviour {
 	private IEnumerator DestroyText(GameObject text, float seconds){
 		yield return new WaitForSeconds(seconds);
 		Destroy(text);
+	}
+
+	private void ResetChargeButton(){
+		jumpButtonHeld = false;
+		jumpButtonHeldMaxedOut = false;
+		playerAudio.StopChargingSound();
+		jumpButtonHeldTime = 0f;
 	}
 
 	public void SetIsHUDActive(bool b){

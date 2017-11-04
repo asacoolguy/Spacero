@@ -52,7 +52,7 @@ public abstract class PlayerScript : MonoBehaviour {
 	private PlayerHUDScript playerHUD;
 
 	private ArrayList nearbyPlanets = new ArrayList();
-	private PlayerAudioScript playerAudio;
+	[SerializeField]private PlayerAudioScript playerAudio;
 	// coin combo variables
 	public int coinCombo;
 
@@ -273,6 +273,12 @@ public abstract class PlayerScript : MonoBehaviour {
 				otherPlayer.Suicide();
 			}
 
+			// if the planet will explode, get points
+			if (currentPlanet.WillExplodeNext()){
+				AcquirePoints(currentPlanet.GetPointValue(), this.transform.position);
+			}
+
+
 			nearbyPlanets.Remove (currentPlanet.gameObject);
 			currentPlanet.SelfDestruct();
 			currentPlanet = null;
@@ -392,6 +398,15 @@ public abstract class PlayerScript : MonoBehaviour {
 		playerHUD.ShowFloatingText(gainedPts, orbPosition);
 		playerAudio.PlayOrbSound(coinCombo);
 	}
+
+
+	// function that the planet object calls when it's been blown up
+	// TODO: refactor the acquireOrb and Pts function to be more interchangeable
+	public void AcquirePoints(int pointValue, Vector3 position){
+		score += pointValue;
+		playerHUD.ShowFloatingText(pointValue, position);
+	}
+
 
 	// function that any object can call when the player gets or loses points
 	public void ObtainPoints(int value){

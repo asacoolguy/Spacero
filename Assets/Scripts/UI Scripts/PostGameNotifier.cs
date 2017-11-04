@@ -5,55 +5,51 @@ using UnityEngine.UI;
 
 public class PostGameNotifier : MonoBehaviour {
 	private Image image;
-	public GameObject gameOverText;
-	public GameObject[] texts;
+	public GameObject gameOverText, objectiveText, player1ScoreInfo, player2ScoreInfo, player1ScoreText, player2ScoreText, winnerText, countDownToNextMapText;
 
-	private float maxAlpha;
-	public float imageFadeDuration, textFadeDuration, gameOverTextDisplayDuration;
-	public AudioClip countdownSound, finishSound;
+	public float gameOverTextDisplayDuration;
+	public int countDownToNextMapTime;
+	public AudioClip countdownSound, finishSound, textPopUpSound, scoreSmashSound, winSound;
+
+	private Animator animator;
+	private AudioSource audioSource;
 
 	// Use this for initialization
 	void Awake () {
 		image = this.GetComponent<Image>();
-		gameOverText = this.transform.Find("Game Over").gameObject;
+		animator = GetComponent<Animator>();
+		audioSource = GetComponent<AudioSource>();
 
-		maxAlpha = image.color.a;
-		ResetImageText();
-		ResetGameOverText();
+		EnableImageText(false);
+		countDownToNextMapText.SetActive(false);
+		gameOverText.SetActive(false);
 	}
 
 
 	// slowly fade in the image and the text at the designated speed, one by one
 	public IEnumerator DisplayNotification(){
-		// first enable the images and texts back up
-		image.enabled = true;
-		foreach (GameObject textObj in texts){
-			textObj.SetActive(true);
-		}
-		// dummy variable used to help set the alpha of color
-		Color newColor;
-		
-		float imageFadeSpeed = Mathf.Abs(maxAlpha - image.color.a) / imageFadeDuration;
-		float textFadeSpeed = 1f / textFadeDuration;
+		EnableImageText(true);
 
-		// first fade in image color
-		while(!Mathf.Approximately(image.color.a, maxAlpha)){
-			newColor = image.color;
-			newColor.a = Mathf.MoveTowards(image.color.a, maxAlpha, imageFadeSpeed * Time.deltaTime);;
-			image.color = newColor;
+		// play the animation 
+		animator.SetBool("ShowResults", true);
+
+		// wait until we're in the animation state, then wait for the animation to finish
+		while(!animator.GetCurrentAnimatorStateInfo(0).IsName("ShowResults")){
 			yield return null;
 		}
+		yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length + 3f);
+	}
 
-		// then fade in the texts one by one
-		foreach(GameObject textObj in texts){
-			while(!Mathf.Approximately(textObj.GetComponentInChildren<Text>().color.a, 1f)){
-				foreach(Text text in textObj.GetComponentsInChildren<Text>()){
-					newColor = text.color;
-					newColor.a = Mathf.MoveTowards(text.color.a, 1f, textFadeSpeed * Time.deltaTime);
-					text.color = newColor;
-				}
-				yield return null;
+
+	// shows countdown to the next map
+	public IEnumerator CountDownToNextMap(){
+		countDownToNextMapText.SetActive(true);
+
+		for (int i = countDownToNextMapTime; i >= 0; i--){
+			foreach(Text text in countDownToNextMapText.GetComponentsInChildren<Text>()){
+				text.text = "Next Map in ..." + i;
 			}
+			yield return new WaitForSeconds(1f);
 		}
 	}
 
@@ -61,29 +57,58 @@ public class PostGameNotifier : MonoBehaviour {
 	// shows the Game Over Text
 	public IEnumerator DisplayGameOverText(){
 		gameOverText.SetActive(true);
+		audioSource.PlayOneShot(finishSound);
 		yield return new WaitForSeconds(gameOverTextDisplayDuration);
-		ResetGameOverText();
+		gameOverText.SetActive(false);
 	}
 
-	// sets the image and texts to their default hidden state and then disable them
-	private void ResetImageText(){
-		Color imageColor = image.color;
-		imageColor.a = 0f;
-		image.color = imageColor;
-		image.enabled = false;
 
-		foreach(GameObject textObj in texts){
-			foreach(Text text in textObj.GetComponentsInChildren<Text>()){
-				Color c = text.color;
-				c.a = 0f;
-				text.color = c;
-			}
-			textObj.SetActive(false);
+	// sets up the text to show the right results for this round
+	public void SetUpText(string objectiveString, int p1Score, int p2Score, PlayerScript winner){
+		foreach (Text text in objectiveText.GetComponentsInChildren<Text>()){
+			text.text = objectiveString;
+		}
+
+		foreach (Text text in player1ScoreText.GetComponentsInChildren<Text>()){
+			text.text = p1Score.ToString();
+		}
+		foreach (Text text in player2ScoreText.GetComponentsInChildren<Text>()){
+			text.text = p2Score.ToString();
+		}
+
+		string winString;
+		if (winner == null){
+			winString = "Game is Tied.";
+		}
+		else{
+			winString = "Player " + winner.GetPlayerID() + " Wins!";
+		}
+		foreach (Text text in winnerText.GetComponentsInChildren<Text>()){
+			text.text = winString;
 		}
 	}
 
-	// sets the gameOverText to its default hidden state and disable it
-	private void ResetGameOverText(){
-		gameOverText.SetActive(false);
+	// sets the image and texts to their default hidden state and then disable them
+	private void EnableImageText(bool b){
+		image.enabled = b;
+		objectiveText.SetActive(b);
+		player1ScoreInfo.SetActive(b);
+		player2ScoreInfo.SetActive(b);
+		player1ScoreText.SetActive(b);
+		player2ScoreText.SetActive(b);
+		winnerText.SetActive(b);
 	}
+
+	public void PlayTextPopUpSound(){
+		this.audioSource.PlayOneShot(textPopUpSound);
+	}
+
+	public void PlayScoreSmashSound(){
+		this.audioSource.PlayOneShot(scoreSmashSound);
+	}
+
+	public void PlayWinSound(){
+		this.audioSource.PlayOneShot(winSound);
+	}
+
 }
